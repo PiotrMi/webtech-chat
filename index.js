@@ -2,40 +2,20 @@
 
 // import libraries
 var http = require('http');
-var fs = require('fs');
-var url = require('url');
+var express = require('express');
 var logger = require('./logger.js');
 var socket = require('socket.io');
 var users = require('./users.js');
 var history = require('./history.js');
 
 
-// create simple webserver: now serve the index.html
-var server = http.createServer(function (request, response) {
+// create an express app to serve the static files in the 'public' folder
+var app = express();
+app.use(express.static('public'));
 
-    // log request
-    logger.emit('info', '>> new request: ' + request.url);
 
-    // parse the request
-    var path = url.parse(request.url).pathname;
-    if (path === '/') {
-        path = '/index.html';
-    }
-
-    // read the file
-    var fileStream = fs.createReadStream(__dirname + '/public' + path);
-
-    // serve file asynchronusly
-    response.writeHead(200);
-    fileStream.pipe(response);
-
-    // file not found
-    fileStream.on('error', function (err) {
-        response.writeHead(404);
-        response.end();
-    });
-
-});
+// create simple webserver: use express to handle the requests
+var server = http.createServer(app);
 
 
 // create socket.io instance and tell it to use our server
