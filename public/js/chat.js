@@ -31,6 +31,12 @@ $(function () {
     // Socket.IO section
     /////////////////////////////////////////////////////////////////////
 
+    // create socket.io instance
+    var socket = io();
+    socket.on('connect', function (data) {
+        alert('connected');
+    });
+
     // current status
     var status = {
         loggedIn: false

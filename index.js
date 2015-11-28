@@ -5,6 +5,7 @@ var http = require('http');
 var fs = require('fs');
 var url = require('url');
 var logger = require('./logger.js');
+var socket = require('socket.io');
 
 // create simple webserver: now serve the index.html
 var server = http.createServer(function (request, response) {
@@ -32,6 +33,13 @@ var server = http.createServer(function (request, response) {
     });
 
 });
+
+// create socket.io instance and tell it to use our server
+var io = socket(server);
+io.on('connect', function () {
+    logger.emit('info', 'client connected');
+});
+
 
 // run webserver
 var port = process.env.PORT || 8080;
