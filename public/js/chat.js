@@ -47,6 +47,12 @@ $(function () {
         showChat();
     });
 
+    // a new message received
+    socket.on('message', function (message) {
+        console.log(message);
+        addChatMessage(message);
+    });
+
     /////////////////////////////////////////////////////////////////////
     // Input events
     /////////////////////////////////////////////////////////////////////
@@ -137,7 +143,8 @@ $(function () {
         // if non-empty message and socket connected
         if (message && status.loggedIn) {
 
-            // TODO: send message to the server
+            // send message to the server
+            socket.emit('message', message);
 
             // cancel the text
             $chatInput.val('');

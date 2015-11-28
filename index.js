@@ -34,13 +34,14 @@ var server = http.createServer(function (request, response) {
 
 });
 
+
 // create socket.io instance and tell it to use our server
 var io = socket(server);
 io.on('connect', function (socket) {
     logger.emit('info', 'client connected');
 
     // login attemp
-    socket.on('login', function(username) {
+    socket.on('login', function (username) {
         logger.emit('info', 'new login: ' + username);
 
         // save the username for this socket
@@ -48,6 +49,27 @@ io.on('connect', function (socket) {
 
         // login ok
         socket.emit('login_ok');
+    });
+
+    // listen to messages
+    socket.on('message', function (message) {
+        logger.emit('info', 'new message: ' + message);
+
+        // make sure the user is logged in the chat
+        if (socket.username) {
+
+            // add the username to the message
+            var msg = {
+                message: message,
+                username: socket.username
+            };
+
+            // send it to all the other clients
+            socket.broadcast.emit('message', msg);
+
+            // send it back to this client
+            socket.emit('message', msg);
+        }
     });
 });
 

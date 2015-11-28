@@ -5,7 +5,7 @@ Advanced Web Techologies - RWTH Aachen University
  - [x] Simple HTTP-Server
  - [x] Custom Logger
  - [x] Serve Static Files
- - [ ] Socket.IO
+ - [x] Socket.IO
  - [ ] Espress
  
 Demo: https://webtech-chat.herokuapp.com/
