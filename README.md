@@ -2,7 +2,7 @@
 Advanced Web Techologies - RWTH Aachen University
 
 ## Outline
- - [ ] Simple HTTP-Server
+ - [x] Simple HTTP-Server
  - [ ] Custom Logger
  - [ ] Serve Static Files
  - [ ] Socket.IO
