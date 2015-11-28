@@ -7,6 +7,7 @@ $(function () {
 
     // chat appearance
     var FADE_TIME = 150; // ms
+    var TYPING_TIMER_LENGTH = 400; // ms
 
     // better colors
     var COLORS = [
@@ -130,6 +131,22 @@ $(function () {
         }
     });
 
+    // somebody is typing
+    socket.on('start_typing', function (username) {
+        console.log('start_typing: ' + username);
+
+        // display the typing message
+        addChatTyping(username);
+    });
+
+    // somebody stopped typing
+    socket.on('stop_typing', function (username) {
+        console.log('stop_typing: ' + username);
+
+        // remove the typing message
+        removeChatTyping(username);
+    });
+
     /////////////////////////////////////////////////////////////////////
     // Input events
     /////////////////////////////////////////////////////////////////////
@@ -150,6 +167,10 @@ $(function () {
 
                 // send message
                 sendMessage();
+
+                // end message => stop typing
+                socket.emit('stop_typing');
+                status.typing = false;
             }
 
             // if on login page -> try to join the chat
@@ -163,6 +184,9 @@ $(function () {
             }
         }
     });
+
+    // user is typing...
+    $chatInput.on('input', updateTyping);
 
     // focus input when clicking anywhere on login page
     $loginPage.click(function () {
@@ -265,6 +289,9 @@ $(function () {
 
         // search and remove
         $chatUsers.find('[data-username="' + username + '"]').remove();
+
+        // this user left -> so remove its typing message
+        removeChatTyping(username);
     }
 
     // adds a message element to the messages and scrolls to the bottom
@@ -325,4 +352,59 @@ $(function () {
         // append it to the chat
         addChatElement(createChatElement(message), false);
     }
+
+    // adds the visual chat typing message
+    function addChatTyping(username) {
+
+        // create the new node
+        var $el = createChatElement({
+            username: username,
+            message: 'is typing...'
+        });
+
+        // add some attributes
+        $el.addClass('typing')
+            .attr('data-username', username);
+
+        // append it to the chat
+        addChatElement($el, true);
+    }
+
+    // gets the 'X is typing' messages of a given user
+    function getTypingMessages(username) {
+        return $chatElements.find('.typing.message[data-username=' + username + ']');
+    }
+
+    // removes the visual chat typing message
+    function removeChatTyping(username) {
+        getTypingMessages(username).fadeOut(function () {
+            $(this).remove();
+        });
+    }
+
+    // updates the typing event
+    function updateTyping() {
+        if (status.loggedIn) {
+
+            // user started typing
+            if (!status.typing) {
+                status.typing = true;
+                socket.emit('start_typing');
+            }
+
+            // save time
+            status.lastTypingTime = (new Date()).getTime();
+
+            // after a fixed timeout -> user stopped typing
+            setTimeout(function () {
+                var typingTimer = (new Date()).getTime();
+                var timeDiff = typingTimer - status.lastTypingTime;
+                if (timeDiff >= TYPING_TIMER_LENGTH && status.typing) {
+                    socket.emit('stop_typing');
+                    status.typing = false;
+                }
+            }, TYPING_TIMER_LENGTH);
+        }
+    }
+
 });

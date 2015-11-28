@@ -113,6 +113,30 @@ io.on('connect', function (socket) {
         logger.emit('info', 'client disconnected');
     });
 
+    // the user is typing
+    socket.on('start_typing', function () {
+        logger.emit('info', 'start_typing: ' + socket.username);
+
+        // make sure the user is logged in the chat
+        if (socket.username) {
+
+            // say everybody that the user is typing
+            socket.broadcast.emit('start_typing', socket.username);
+        }
+    });
+
+    // the user stopped typing
+    socket.on('stop_typing', function () {
+        logger.emit('info', 'stop_typing: ' + socket.username);
+
+        // make sure the user is logged in the chat
+        if (socket.username) {
+
+            // say everybody that the user has stopped typing
+            socket.broadcast.emit('stop_typing', socket.username);
+        }
+    });
+
 });
 
 
