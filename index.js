@@ -6,6 +6,7 @@ var fs = require('fs');
 var url = require('url');
 var logger = require('./logger.js');
 var socket = require('socket.io');
+var users = require('./users.js');
 
 // create simple webserver: now serve the index.html
 var server = http.createServer(function (request, response) {
@@ -42,13 +43,35 @@ io.on('connect', function (socket) {
 
     // login attemp
     socket.on('login', function (username) {
-        logger.emit('info', 'new login: ' + username);
 
-        // save the username for this socket
-        socket.username = username;
+        // check if the username is available
+        if (!socket.username && users.insertUser(username)) {
 
-        // login ok
-        socket.emit('login_ok');
+            // log
+            logger.emit('info', 'new login ok: ' + username);
+
+            // save the username for this socket
+            socket.username = username;
+
+            // login ok
+            socket.emit('login_ok', username);
+
+            // send connected users
+            socket.emit('users', users.getUsers());
+
+            // notify the other clients
+            socket.broadcast.emit('user_join', username);
+        }
+
+        // username taken
+        else {
+
+            // log
+            logger.emit('error', 'new login fail: ' + username);
+
+            // login fail
+            socket.emit('login_fail', 'username already taken');
+        }
     });
 
     // listen to messages
@@ -71,6 +94,25 @@ io.on('connect', function (socket) {
             socket.emit('message', msg);
         }
     });
+
+    // the client disconnects
+    socket.on('disconnect', function () {
+
+        // remove username from the lists
+        // [make sure the user was logged in]
+        if (users.removeUser(socket.username)) {
+
+            // log
+            logger.emit('info', 'user left: ' + socket.username);
+
+            // say everybody that the user left
+            socket.broadcast.emit('user_left', socket.username);
+        }
+
+        // log
+        logger.emit('info', 'client disconnected');
+    });
+
 });
 
 

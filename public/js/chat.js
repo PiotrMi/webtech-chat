@@ -17,9 +17,11 @@ $(function () {
     // login page references
     var $loginPage = $('.login.page');
     var $loginUsername = $loginPage.find('.login-username');
+    var $loginError = $loginPage.find('.login-error');
 
     // chat page references
     var $chatPage = $('.chat.page');
+    var $chatUsers = $chatPage.find('.chat-users ul');
     var $chatElements = $chatPage.find('.chat-messages');
     var $chatInput = $chatPage.find('.chat-input');
 
@@ -39,18 +41,93 @@ $(function () {
     // create socket.io instance
     var socket = io();
 
-    // login was ok
-    socket.on('login_ok', function (data) {
+    // connected to the server
+    socket.on('connect', function () {
+        console.log('connect');
+    });
+
+    // disconnected (eg. problems with the connection to the server)
+    socket.on('disconnect', function () {
+        console.log('disconnect');
+
+        // update status
+        status.loggedIn = false;
+
+        // return to login page
+        showLogin();
+    });
+
+    // login ok
+    socket.on('login_ok', function (username) {
+        console.log('login_ok: ' + username);
+
+        // now we are connected to the chat room
         status.loggedIn = true;
 
         // switch to chat page
         showChat();
     });
 
+    // login fail
+    socket.on('login_fail', function (error) {
+        console.log('login_fail: ' + error);
+
+        // show the error message
+        $loginError.show();
+
+        // animation
+        $loginError.effect('shake', {
+            speed: 20,
+            distance: 5,
+            times: 3
+        });
+    });
+
+    // received users' list
+    socket.on('users', function (users) {
+        console.log('users: ' + users);
+
+        // add each user to the users' list
+        users.forEach(addUser);
+    });
+
+    // a new user joined
+    socket.on('user_join', function (username) {
+        console.log('user_join: ' + username);
+
+        if (status.loggedIn) {
+
+            // write "grey" message
+            addLogMessage(username + ' joined');
+
+            // add user to the left list
+            addUser(username);
+        }
+    });
+
+    // an user left
+    socket.on('user_left', function (username) {
+        console.log('user_left: ' + username);
+
+        if (status.loggedIn) {
+
+            // write "grey" message
+            addLogMessage(username + ' left');
+
+            // remove user from the left list
+            removeUser(username);
+        }
+    });
+
     // a new message received
     socket.on('message', function (message) {
-        console.log(message);
-        addChatMessage(message);
+        console.log('message: ' + JSON.stringify(message));
+
+        if (status.loggedIn) {
+
+            // append new message to the chat
+            addChatMessage(message);
+        }
     });
 
     /////////////////////////////////////////////////////////////////////
@@ -102,6 +179,25 @@ $(function () {
     // Functions
     /////////////////////////////////////////////////////////////////////
 
+    // show login page
+    function showLogin() {
+
+        // hide chat
+        $chatPage.fadeOut();
+
+        // hide error
+        $loginError.hide();
+
+        // show login
+        $loginPage.show();
+
+        // focus on username input
+        $currentInput = $loginUsername.focus();
+
+        // clear users' list
+        $chatUsers.empty();
+    }
+
     // show chat page
     function showChat() {
 
@@ -151,6 +247,26 @@ $(function () {
         }
     }
 
+    // add an user to the list of online users
+    function addUser(username) {
+
+        // create a new user
+        var $usernameDiv = $('<li class="username"/>')
+            .text(username)
+            .attr('data-username', username)
+            .css('color', getUsernameColor(username));
+
+        // append it to the online users
+        $chatUsers.append($usernameDiv);
+    }
+
+    // remove an user from the list of online users
+    function removeUser(username) {
+
+        // search and remove
+        $chatUsers.find('[data-username="' + username + '"]').remove();
+    }
+
     // adds a message element to the messages and scrolls to the bottom
     // end = false --> append it after the last chat message (not typing message)
     // end = true --> append it after the last typing message
@@ -191,6 +307,16 @@ $(function () {
         return $('<li class="message"/>')
             .data('username', message.username)
             .append($usernameSpan, $messageBodySpan);
+    }
+
+    // add a "log message"
+    function addLogMessage(message) {
+
+        // create a new log message
+        var $el = $('<li>').addClass('log').text(message);
+
+        // append it to the chat
+        addChatElement($el, false);
     }
 
     // adds the visual chat message to the message list
