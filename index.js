@@ -7,6 +7,8 @@ var url = require('url');
 var logger = require('./logger.js');
 var socket = require('socket.io');
 var users = require('./users.js');
+var history = require('./history.js');
+
 
 // create simple webserver: now serve the index.html
 var server = http.createServer(function (request, response) {
@@ -59,6 +61,11 @@ io.on('connect', function (socket) {
             // send connected users
             socket.emit('users', users.getUsers());
 
+            // send chat history
+            history.getMessages().forEach(function(message) {
+                socket.emit('message', message);
+            });
+
             // notify the other clients
             socket.broadcast.emit('user_join', username);
         }
@@ -92,6 +99,9 @@ io.on('connect', function (socket) {
 
             // send it back to this client
             socket.emit('message', msg);
+
+            // store message
+            history.storeMessage(msg);
         }
     });
 
