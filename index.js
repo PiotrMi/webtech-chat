@@ -36,8 +36,19 @@ var server = http.createServer(function (request, response) {
 
 // create socket.io instance and tell it to use our server
 var io = socket(server);
-io.on('connect', function () {
+io.on('connect', function (socket) {
     logger.emit('info', 'client connected');
+
+    // login attemp
+    socket.on('login', function(username) {
+        logger.emit('info', 'new login: ' + username);
+
+        // save the username for this socket
+        socket.username = username;
+
+        // login ok
+        socket.emit('login_ok');
+    });
 });
 
 

@@ -31,18 +31,21 @@ $(function () {
     // Socket.IO section
     /////////////////////////////////////////////////////////////////////
 
-    // create socket.io instance
-    var socket = io();
-    socket.on('connect', function (data) {
-        alert('connected');
-    });
-
     // current status
     var status = {
         loggedIn: false
     };
 
-    // TODO: implement the chat!
+    // create socket.io instance
+    var socket = io();
+
+    // login was ok
+    socket.on('login_ok', function (data) {
+        status.loggedIn = true;
+
+        // switch to chat page
+        showChat();
+    });
 
     /////////////////////////////////////////////////////////////////////
     // Input events
@@ -70,7 +73,10 @@ $(function () {
             else {
                 var username = escapeHtml($loginUsername.val().trim());
 
-                // TODO: join the chat
+                // try to join the chat
+                if (username) {
+                    socket.emit('login', username);
+                }
             }
         }
     });
