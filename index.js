@@ -12,24 +12,11 @@ var server = http.createServer(function (request, response) {
     logger.emit('info', '>> new request: ' + request.url);
 
     // read the file
-    fs.readFile(__dirname + '/public/index.html', function (err, data) {
+    var fileStream = fs.createReadStream(__dirname + '/public/index.html');
 
-        // log the possible error
-        if (err) {
-            logger.emit('error', 'error reading index.html -> ' + err);
-            response.writeHead(404);
-        }
-
-        // return the file content
-        else {
-            response.writeHead(200);
-            response.write(data);
-        }
-
-        // end the response
-        response.end();
-    });
-
+    // serve file asynchronusly
+    response.writeHead(200);
+    fileStream.pipe(response);
 });
 
 // run webserver

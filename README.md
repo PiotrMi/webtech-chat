@@ -4,7 +4,7 @@ Advanced Web Techologies - RWTH Aachen University
 ## Outline
  - [x] Simple HTTP-Server
  - [x] Custom Logger
- - [ ] Serve Static Files
+ - [x] Serve Static Files
  - [ ] Socket.IO
  - [ ] Espress
  
