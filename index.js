@@ -1,12 +1,21 @@
 'use strict';
 
 // import libraries
+var fs = require('fs');
 var http = require('http');
+var https = require('https');
 var express = require('express');
 var logger = require('./logger.js');
 var socket = require('socket.io');
 var users = require('./users.js');
 var history = require('./history.js');
+
+// keys and certificates locations
+var options = {
+    key: fs.readFileSync(__dirname + '/cert/server.key'),
+    cert: fs.readFileSync(__dirname + '/cert/server.crt'),
+    ca: fs.readFileSync(__dirname + '/cert/ca.crt')
+};
 
 
 // create an express app to serve the static files in the 'public' folder
@@ -14,12 +23,17 @@ var app = express();
 app.use(express.static('public'));
 
 
-// create simple webserver: use express to handle the requests
-var server = http.createServer(app);
+// create http and https server
+var httpServer = http.createServer(app);
+var httpsServer = https.createServer(options, app);
 
 
-// create socket.io instance and tell it to use our server
-var io = socket(server);
+// create socket.io instance: use both servers
+var io = socket()
+    .listen(httpServer)
+    .listen(httpsServer);
+
+// handle socket.io connections
 io.on('connect', function (socket) {
     logger.emit('info', 'client connected');
 
@@ -130,8 +144,14 @@ io.on('connect', function (socket) {
 });
 
 
-// run webserver
-var port = process.env.PORT || 8080;
-server.listen(port, function () {
-    console.log('listen to port ' + port);
+// run http server
+var httpPort = process.env.PORT || 8080;
+httpServer.listen(httpPort, function () {
+    console.log('HTTP server listening at port %d', httpPort);
+});
+
+// run https server
+var httpsPort = process.env.PORT_HTTPS || 8443;
+httpsServer.listen(httpsPort, function () {
+    console.log('HTTPS server listening at port %d\n', httpsPort);
 });
