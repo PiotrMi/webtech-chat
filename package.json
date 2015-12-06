@@ -1,5 +1,5 @@
 {
-  "name": "socket-chat-example",
+  "name": "webtech-chat",
   "version": "0.1.0",
   "description": "Socket.IO example - WebTech 2 - RWTH Aachen University",
   "main": "index.js",
